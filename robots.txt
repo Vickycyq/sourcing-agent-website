@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sourcing-agent.pages.dev/sitemap.xml
+Sitemap: https://sourcing-agent-website.pages.dev/sitemap.xml
