@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sourcing-agent-website.pages.dev/sitemap.xml
+Sitemap: https://fulfill-lab.cn/sitemap.xml
