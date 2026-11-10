@@ -650,24 +650,28 @@
     <div class="form-card" id="contact">
       <h3><svg class="licon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Tell Us What You Need</h3>
       <form onsubmit="handleSubmit(event)">
+        <!-- Web3Forms: 表单提交自动转发邮件到 business@fulfill-lab.cn -->
+        <input type="hidden" name="access_key" id="w3f-key" value="YOUR_ACCESS_KEY">
+        <input type="hidden" name="subject" value="🔔 New Sourcing Inquiry — fulfill-lab.cn">
+        <input type="hidden" name="from_name" value="FulfillLab Website">
         <div class="form-row">
           <div>
             <label>Your Name *</label>
-            <input type="text" id="fname" placeholder="John Smith" required>
+            <input type="text" id="fname" name="name" placeholder="John Smith" required>
           </div>
           <div>
             <label>Email *</label>
-            <input type="email" id="femail" placeholder="you@company.com" required>
+            <input type="email" id="femail" name="email" placeholder="you@company.com" required>
           </div>
         </div>
         <div class="form-row">
           <div>
             <label>WhatsApp / Phone</label>
-            <input type="text" placeholder="+1 234 567 8900">
+            <input type="text" name="whatsapp" placeholder="+1 234 567 8900">
           </div>
           <div>
             <label>Product Category</label>
-            <select id="fcat">
+            <select id="fcat" name="category">
               <option>Furniture</option>
               <option>Home Decor</option>
               <option>Clothes &amp; Fabric</option>
@@ -678,9 +682,11 @@
           </div>
         </div>
         <label>Product Requirements *</label>
-        <textarea id="fmsg" placeholder="Product name, specifications, quantity, target price, lead time..." required></textarea>
-        <button class="btn" type="submit">Submit — Get Free Quote →</button>
-        <div class="form-note">We respect your privacy. Your information is never shared.</div>
+        <textarea id="fmsg" name="message" placeholder="Product name, specifications, quantity, target price, lead time..." required></textarea>
+        <!-- honeypot 防垃圾提交 -->
+        <input type="checkbox" name="botcheck" style="display:none;">
+        <button class="btn" type="submit" id="submit-btn">Submit — Get Free Quote →</button>
+        <div class="form-note" id="form-status">We respect your privacy. Your information is never shared.</div>
       </form>
     </div>
   </div>
@@ -729,11 +735,39 @@
 </footer>
 
 <script>
-  function handleSubmit(e){
+  async function handleSubmit(e){
     e.preventDefault();
-    var name = document.getElementById('fname').value.trim() || 'there';
-    alert('Thank you, ' + name + '! Your request has been received. Our sourcing expert will reply within 24 hours. 🚀');
-    e.target.reset();
+    var form = e.target;
+    var btn = document.getElementById('submit-btn');
+    var status = document.getElementById('form-status');
+    var key = document.getElementById('w3f-key').value;
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    status.textContent = 'We respect your privacy. Your information is never shared.';
+    try{
+      var res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        body: JSON.stringify(Object.fromEntries(new FormData(form)))
+      });
+      var data = await res.json();
+      if(data.success){
+        btn.textContent = '✓ Sent Successfully';
+        status.textContent = '✓ Your inquiry has been sent. We will reply within 24 hours!';
+        form.reset();
+        setTimeout(function(){
+          btn.textContent = 'Submit — Get Free Quote →';
+          btn.disabled = false;
+        }, 4000);
+      }else{
+        throw new Error(data.message || 'Send failed');
+      }
+    }catch(err){
+      // 发送失败时降级为邮件客户端打开
+      status.innerHTML = '⚠ Auto-send failed. Please email us directly: <a href="mailto:business@fulfill-lab.cn" style="color:#ff8a3c;">business@fulfill-lab.cn</a>';
+      btn.textContent = 'Submit — Get Free Quote →';
+      btn.disabled = false;
+    }
   }
   document.querySelector('.hamburger').addEventListener('click',function(){
     var ul=document.querySelector('nav ul');
